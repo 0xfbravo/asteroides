@@ -36,7 +36,7 @@ int main(){
 	pontos1 = "0"; pontos2 = "1"; pontos3 = "2"; pontos4 = "3";
 	pontos5 = "4"; pontos6 = "5"; pontos7 = "6"; pontos8 = "7";
 	pontos9 = "8"; pontos10 = "9";
-	//int pontuacao = 0;*/
+	int pontuacao = 0;*/
 		printf("\t-----------------------------------------------------------------------\n");
 		printf("\t|   _______                                   _      _                |\n");
 		printf("\t|  (_______)         _                       (_)    | |               |\n");

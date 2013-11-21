@@ -26,9 +26,11 @@
 int main(){
 	int menu = 0;
 	int opcao = 0;
-	//int i = 0;
-	//while(i < 10){ i = i+1; printf("Valor de I: %d \n",i); };
-	/*char jogador(for i < 10; i = i+1)[NOME]// jogador1,jogador2,jogador3,jogador4,jogador5,jogador6,jogador7,jogador8,jogador9,jogador10;
+	/*
+	-- Apenas deixar definido para utilização posterior
+	int i = 0;
+	while(i < 10){ i = i+1; printf("Valor de I: %d \n",i); };
+	char jogador(for i < 10; i = i+1)[NOME]// jogador1,jogador2,jogador3,jogador4,jogador5,jogador6,jogador7,jogador8,jogador9,jogador10;
 	jogador1 = "Fellipe"; jogador2 = "Fellipe"; jogador3 = "Fellipe"; jogador4 = "Fellipe";
 	jogador5 = "Fellipe"; jogador6 = "Fellipe"; jogador7 = "Fellipe"; jogador8 = "Fellipe";
 	jogador9 = "Fellipe"; jogador10 = "Fellipe";
@@ -92,6 +94,7 @@ int main(){
 
 			/*
 			 -- Ao terminar o jogo, caso a pontuação seja maior que o alguma pontuação, adiciona o nick no Ranking --
+			 -- Utilização posterior --
 
 			if(pontuacao > pontuacao){
 			printf("Favor digite um nick para ser lembrado: ");
