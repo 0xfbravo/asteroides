@@ -9,7 +9,7 @@
 |              |_|   |_|(___/    \__)|_____)|_|    \___/ |_| \____||_____)(___/                |
 |                                                                                              |
 |                                                                                              |
-|                     Trabalho de Laboratório de Computação 1 - UFRRJ 2013                     |
+|                     Trabalho de Laboratório de Computação 1 - IM-UFRRJ 2013                  |
 |                          Participantes                                                       |
 |				- Fellipe Bravo Ribeiro Pimentel                               |
 |				- Paulo Roberto Xavier                                         |
@@ -47,7 +47,7 @@ int main(){
 		printf("\t|  | |   | ||___ |  | |_ | ____|| |   | |_| || |( (_| || ____||___ |  |\n");
 		printf("\t|  |_|   |_|(___/    \\__)|_____)|_|    \\___/ |_| \\____||_____)(___/   |\n");
 		printf("\t|                                                                     |\n");
-		printf("\t|       Trabalho de Laboratorio de Computação 1 - UFRRJ 2013          |\n");
+		printf("\t|       Trabalho de Laboratorio de Computação 1 - IM-UFRRJ 2013       |\n");
 		printf("\t|---------------------------------------------------------------------|\n");
 		printf("\t|                   Fellipe Bravo Ribeiro Pimentel                    |\n");
 		printf("\t|                      Paulo Roberto Xavier                           |\n");
