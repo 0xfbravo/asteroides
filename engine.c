@@ -26,9 +26,7 @@
 #include "SDL/SDL.h"
 #include "SDL/SDL_ttf.h"
 #include "SDL/SDL_image.h"
-#ifdef __cplusplus
-#include <string>
-#endif
+#include <string.h>
 
 /*int main(){
 
@@ -65,11 +63,11 @@ int main(int argv, char **argc)
 	*/
 	SDL_Surface *nave;
 	SDL_Rect naveDim; /* Definida para localização da Nave */
-	//naveDim.w = 10;
-	//naveDim.h = 10;
-	naveDim.x = ALTURA/2;
-	naveDim.y = LARGURA/2;
-	nave = SDL_LoadBMP("nave.bmp");
+	naveDim.w = 200;
+	naveDim.h = 200;
+	naveDim.x = ALTURA/3;
+	naveDim.y = LARGURA/3;
+	nave = SDL_LoadBMP("nave.bpm");
  
         /* Inicialização da Janela */
         if(SDL_Init(SDL_INIT_VIDEO) < 0){
@@ -82,37 +80,37 @@ int main(int argv, char **argc)
         }
  
         /* Fazendo quadradin de 8 colorido pra eu me guiar */
-        //SDL_FillRect(janela, &naveDim, SDL_MapRGB(janela->format, 102, 204, 153));
+        SDL_FillRect(janela, &naveDim, SDL_MapRGB(janela->format, 102, 204, 153));
 
 	/*
 	Checagem se programa está aberto,
 	enquanto estiver aberto verifica se o jogador apertou ESC (Escape) para sair do jogo
 	 */
  	while(aberto){
-		SDL_BlitSurface(nave, NULL, janela, &naveDim);
-		SDL_Flip(janela);
-
-
-
 		while(SDL_PollEvent(&evento)){
+			SDL_BlitSurface(nave, NULL, janela, &naveDim);
+			SDL_Flip(janela);
 			if(evento.type == SDL_KEYDOWN){ /* Checa se alguma tecla foi pressionada */
+				//if(evento.key.keysym.sym == SDL_QUIT){ /* Fecha o "looping" do programa, e pula para o SDL_Quit() */
+				//aberto = 0;
+				//}
 				if(evento.key.keysym.sym == SDLK_ESCAPE){ /* Fecha o "looping" do programa, e pula para o SDL_Quit() */
 				aberto = 0;
 				}
 				if(evento.key.keysym.sym == SDLK_RIGHT){ /* Adiciona 1 para o X da nave, deslocamento lateral direito */
-					printf("Você pressionou a direita");
+					//printf("Você pressionou a direita");
 					naveDim.x += 1;
 				}
 				if(evento.key.keysym.sym == SDLK_LEFT){ /* Subtrai 1 para o X da nave, deslocamento lateral esquerdo */
-					printf("Você pressionou a esquerda");
+					//printf("Você pressionou a esquerda");
 					naveDim.x -= 1;
 				}
 				if(evento.key.keysym.sym == SDLK_UP){ /* Adiciona 1 para o Y da nave, deslocamento SUPERIOR */
-					printf("Você pressionou pra cima");
+					//printf("Você pressionou pra cima");
 					naveDim.y += 1;
 				}
 				if(evento.key.keysym.sym == SDLK_DOWN){ /* Subtrai 1 para o Y da nave, deslocamento INFERIOR */
-					printf("Você pressionou pra baixo");
+					//printf("Você pressionou pra baixo");
 					naveDim.y -= 1;
 				}
 			}
@@ -123,7 +121,6 @@ int main(int argv, char **argc)
 		*/
         	SDL_UpdateRect(janela, 0, 0, 0, 0);
  	}
-
  	SDL_FreeSurface(nave);
         SDL_Quit();
         exit(0);
