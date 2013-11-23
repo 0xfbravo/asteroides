@@ -18,17 +18,15 @@
 ------------------------------------------------------------------------------------------------
 */
 
-
 #include <stdio.h>
 #include <stdlib.h>
-#include "engine.h"
-#include "menu.c"
 #include "SDL/SDL.h"
 #include "SDL/SDL_ttf.h"
 #include "SDL/SDL_image.h"
-#include <string.h>
+#include "engine.h"
+#include "menu.c"
 
-/*int main(){
+int main(){
 
 	printf("\t-----------------------------------------------------------------------\n");
 	printf("\t|   _______                                   _      _                |\n");
@@ -47,81 +45,65 @@
 
 	menu();
 	return 0;	
-}*/
+}
 
-int main(int argv, char **argc)
-{
-	int aberto = 1; /* Variável de looping */
-	SDL_Surface *janela; /*  */
-	SDL_Event evento; /* Definida para resgatar valores de eventos */
-	janela = SDL_SetVideoMode(ALTURA, LARGURA, 32, SDL_HWSURFACE); /* Definição do Tamanho da Janela de Jogo, configuráveis em engine.h */
-	SDL_FillRect(janela , NULL , 0x221122); /* Background da Janela */
-	SDL_WM_SetCaption(NOME, NULL); /* NOME definido em engine.h */
+int Jogar(int argv, char **argc){
 
-	/*
-	 Dimensões e Localização do Quadrado
-	*/
-	SDL_Surface *nave;
-	SDL_Rect naveDim; /* Definida para localização da Nave */
-	naveDim.w = 200;
-	naveDim.h = 200;
-	naveDim.x = ALTURA/3;
-	naveDim.y = LARGURA/3;
-	nave = SDL_LoadBMP("nave.bpm");
- 
-        /* Inicialização da Janela */
+	/* Inicialização da Janela */
+	SDL_Init(SDL_INIT_VIDEO);
         if(SDL_Init(SDL_INIT_VIDEO) < 0){
                 exit(-1);
         }
-        /* Checa se a janela existe, caso contrário o programa é fechado com erro */
+
+	/* Configurações da Janela */
+	SDL_WM_SetCaption(NOME, NULL); /* Nome, definido em engine.h */
+	janela = SDL_SetVideoMode(ALTURA, LARGURA, 32, SDL_HWSURFACE);
+ 
+        /* Checa se a janela existe, caso contrário o programa é fechado */
 	if(janela == NULL){
 		SDL_Quit();
 		exit(-1);
         }
- 
-        /* Fazendo quadradin de 8 colorido pra eu me guiar */
-        SDL_FillRect(janela, &naveDim, SDL_MapRGB(janela->format, 102, 204, 153));
+	/* */
+	temp = SDL_LoadBMP("resources/galaxia.bmp");
+	espaco = SDL_DisplayFormat(temp);
+	/* nave */
+	naveDim.w = 80; /* Largura da "Nave" */
+	naveDim.h = 80; /* Altura da "Nave" */
+	naveDim.x = (ALTURA/2)-naveDim.h; /* Posição X */
+	naveDim.y = (LARGURA/2)-naveDim.w; /* Posição Y */
+	temp = SDL_LoadBMP("resources/nave.bmp");
+	nave = SDL_DisplayFormat(temp);
+
+	SDL_BlitSurface(espaco, NULL, janela, NULL);
+	SDL_BlitSurface(nave, NULL, janela, NULL);
 
 	/*
 	Checagem se programa está aberto,
-	enquanto estiver aberto verifica se o jogador apertou ESC (Escape) para sair do jogo
+	enquanto estiver aberto verifica se o jogador apertou ESC (Escape) para sair do jogo e/ou teclas de movimentação
 	 */
- 	while(aberto){
+ 	while(!aberto){
+		/* Cor nula na sprite */
+		SDL_SetColorKey(nave, SDL_SRCCOLORKEY, SDL_MapRGB(janela->format, 255, 0, 255));
+		SDL_Event evento;
+		SDL_Flip(janela);
+
 		while(SDL_PollEvent(&evento)){
-			SDL_BlitSurface(nave, NULL, janela, &naveDim);
-			SDL_Flip(janela);
-			if(evento.type == SDL_KEYDOWN){ /* Checa se alguma tecla foi pressionada */
-				//if(evento.key.keysym.sym == SDL_QUIT){ /* Fecha o "looping" do programa, e pula para o SDL_Quit() */
-				//aberto = 0;
-				//}
-				if(evento.key.keysym.sym == SDLK_ESCAPE){ /* Fecha o "looping" do programa, e pula para o SDL_Quit() */
-				aberto = 0;
-				}
-				if(evento.key.keysym.sym == SDLK_RIGHT){ /* Adiciona 1 para o X da nave, deslocamento lateral direito */
-					//printf("Você pressionou a direita");
-					naveDim.x += 1;
-				}
-				if(evento.key.keysym.sym == SDLK_LEFT){ /* Subtrai 1 para o X da nave, deslocamento lateral esquerdo */
-					//printf("Você pressionou a esquerda");
-					naveDim.x -= 1;
-				}
-				if(evento.key.keysym.sym == SDLK_UP){ /* Adiciona 1 para o Y da nave, deslocamento SUPERIOR */
-					//printf("Você pressionou pra cima");
-					naveDim.y += 1;
-				}
-				if(evento.key.keysym.sym == SDLK_DOWN){ /* Subtrai 1 para o Y da nave, deslocamento INFERIOR */
-					//printf("Você pressionou pra baixo");
-					naveDim.y -= 1;
-				}
-			}
+			DefGeral(evento);
 		}
+		/* Cria a nave na tela */
+		//SDL_DisplayFormat(IMG_Load("nave.bmp"));
+		//SDL_BlitSurface(nave, &naveDim, janela, &rcSprite);
         	/*
 		 Update da tela enquanto o programa está aberto
 		 Também para atualizar movimentação da nave.
 		*/
         	SDL_UpdateRect(janela, 0, 0, 0, 0);
  	}
- 	SDL_FreeSurface(nave);
         SDL_Quit();
+	system("clear");
+	menu();
         exit(0);
+
+	return 0;
 }

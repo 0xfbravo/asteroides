@@ -48,7 +48,8 @@ int menu() {
 				printf("\t\t\t       Até mais!\n");
 				break;
 			case 1:
-				printf("\t\t\t       JOGO - Ainda em criação!\n");
+				Jogar();
+				return 0;
 				break;
 			case 2:
 				system("clear");
@@ -110,10 +111,11 @@ int menu() {
 				printf("\t\t\t       OPÇÃO 4 - Ainda em criação!\n");
 				break;
 			default:
-				printf("\t\t\t       Opção inválida, digite uma das opções.\n");
-				/* Abre novamente o Menu */
-				menu();				
-				//break;
+				system("clear");
+				printf("\t\t     ---------------------------------------------\n");
+				printf("\t\t     |   Opção inválida, digite uma das opções.  |\n");
+				printf("\t\t     ---------------------------------------------\n");
+				menu(); /* Abre novamente o Menu */
 			}
 		//return 0;
 		//}
