@@ -50,7 +50,6 @@ int menu() {
 			case 1:
 				Jogar();
 				return 0;
-				break;
 			case 2:
 				system("clear");
 				printf("\t\t   -------------------------------------------------------\n");

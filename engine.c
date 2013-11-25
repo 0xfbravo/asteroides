@@ -64,36 +64,43 @@ int Jogar(int argv, char **argc){
 		SDL_Quit();
 		exit(-1);
         }
-	/* */
+
+	/* Espaço */
 	temp = SDL_LoadBMP("resources/galaxia.bmp");
 	espaco = SDL_DisplayFormat(temp);
-	/* nave */
-	naveDim.w = 80; /* Largura da "Nave" */
-	naveDim.h = 80; /* Altura da "Nave" */
-	naveDim.x = (ALTURA/2)-naveDim.h; /* Posição X */
-	naveDim.y = (LARGURA/2)-naveDim.w; /* Posição Y */
+
+	/* Nave */
 	temp = SDL_LoadBMP("resources/nave.bmp");
 	nave = SDL_DisplayFormat(temp);
+	/* Cor nula na sprite */
+	SDL_SetColorKey(nave, SDL_SRCCOLORKEY|SDL_RLEACCEL,(Uint32)SDL_MapRGB(nave->format, 255,0,255));
 
-	SDL_BlitSurface(espaco, NULL, janela, NULL);
-	SDL_BlitSurface(nave, NULL, janela, NULL);
+	naveTotal.x = 0; /* Inicio da sprite em X */
+	naveTotal.y = 0; /* Inicio da sprite em Y */
+	naveTotal.h = 96; /* Tamanho total da sprite */
+	naveTotal.w = 96; /* Tamanho total da sprite */
+
+	espacoTotal.x = 0; /* Local de Destino X da Nave */
+	espacoTotal.y = 0; /* Local de Destino Y da Nave */
+	espacoTotal.h = ALTURA; /* Tamanho total possível de deslocamento */
+	espacoTotal.w = LARGURA; /* Tamanho total possível de deslocamento */
+
 
 	/*
 	Checagem se programa está aberto,
 	enquanto estiver aberto verifica se o jogador apertou ESC (Escape) para sair do jogo e/ou teclas de movimentação
 	 */
  	while(!aberto){
-		/* Cor nula na sprite */
-		SDL_SetColorKey(nave, SDL_SRCCOLORKEY, SDL_MapRGB(janela->format, 255, 0, 255));
 		SDL_Event evento;
-		SDL_Flip(janela);
+		SDL_EnableKeyRepeat(100, 1);
 
 		while(SDL_PollEvent(&evento)){
 			DefGeral(evento);
 		}
-		/* Cria a nave na tela */
-		//SDL_DisplayFormat(IMG_Load("nave.bmp"));
-		//SDL_BlitSurface(nave, &naveDim, janela, &rcSprite);
+		/* Desenha o Espaço por completo */
+		SDL_BlitSurface(espaco, NULL, janela, NULL);
+		/* Desenha a Nave */
+		SDL_BlitSurface(nave, &naveTotal, janela, &espacoTotal);
         	/*
 		 Update da tela enquanto o programa está aberto
 		 Também para atualizar movimentação da nave.
@@ -103,7 +110,6 @@ int Jogar(int argv, char **argc){
         SDL_Quit();
 	system("clear");
 	menu();
-        exit(0);
 
 	return 0;
 }
