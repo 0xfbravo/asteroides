@@ -107,9 +107,27 @@ int Jogar(int argv, char **argc){
 		*/
         	SDL_UpdateRect(janela, 0, 0, 0, 0);
  	}
+	SDL_FreeSurface(nave); /* Evitar vazamento de memória */
+    	SDL_FreeSurface(espaco); /* Evitar vazamento de memória */
         SDL_Quit();
-	system("clear");
-	menu();
+	Fim();
 
+	return 0;
+}
+
+int Fim() {
+	system("clear");
+	printf("\t-----------------------------------------------------------------------\n");
+	printf("\t|   _______                                   _      _                |\n");
+	printf("\t|  (_______)         _                       (_)    | |               |\n");
+	printf("\t|   _______   ___  _| |_  _____   ____  ___   _   __| | _____   ___   |\n");
+	printf("\t|  |  ___  | /___)(_   _)| ___ | / ___)/ _ \\ | | / _  || ___ | /___)  |\n");
+	printf("\t|  | |   | ||___ |  | |_ | ____|| |   | |_| || |( (_| || ____||___ |  |\n");
+	printf("\t|  |_|   |_|(___/    \\__)|_____)|_|    \\___/ |_| \\____||_____)(___/   |\n");
+	printf("\t|                           Projeto 2013                              |\n");
+	printf("\t|       Trabalho de Laboratorio de Computação 1 - IM-UFRRJ 2013       |\n");
+	printf("\t|---------------------------------------------------------------------|\n");
+	printf("\t|                          OBRIGADO POR JOGAR!                        |\n");
+	printf("\t|---------------------------------------------------------------------|\n");
 	return 0;
 }
