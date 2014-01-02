@@ -23,13 +23,6 @@
 
 int menu() {
 	int opcao;
-	//int menu = 0;
-	/*
-	-- Apenas deixar definido para utilização posterior
-	int i = 0;
-	while(i < 10){ i = i+1; printf("Valor de I: %d \n",i); };
-	int pontuacao = 0;*/
-	//while(menu == 0) { -- Retirado Temporariamente, pois ainda não há necessidade
 		printf("\t\t     ---------------------------------------------\n");
 		printf("\t\t     |               MENU DE JOGO                |\n");
 		printf("\t\t     ---------------------------------------------\n");
@@ -48,8 +41,9 @@ int menu() {
 				printf("\t\t\t       Até mais!\n");
 				break;
 			case 1:
-				Jogar();
-				return 0;
+				system("clear");
+				jogar = 1;
+				break;
 			case 2:
 				system("clear");
 				printf("\t\t   -------------------------------------------------------\n");
@@ -114,9 +108,7 @@ int menu() {
 				printf("\t\t     ---------------------------------------------\n");
 				printf("\t\t     |   Opção inválida, digite uma das opções.  |\n");
 				printf("\t\t     ---------------------------------------------\n");
-				menu(); /* Abre novamente o Menu */
+				break;
 			}
-		//return 0;
-		//}
 	return 0;
 }

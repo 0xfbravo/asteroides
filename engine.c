@@ -23,47 +23,29 @@
 #include "SDL/SDL.h"
 #include "SDL/SDL_ttf.h"
 #include "SDL/SDL_image.h"
+#include "SDL/SDL_rotozoom.h"
 #include "engine.h"
 #include "menu.c"
 
-int main(){
-
-	printf("\t-----------------------------------------------------------------------\n");
-	printf("\t|   _______                                   _      _                |\n");
-	printf("\t|  (_______)         _                       (_)    | |               |\n");
-	printf("\t|   _______   ___  _| |_  _____   ____  ___   _   __| | _____   ___   |\n");
-	printf("\t|  |  ___  | /___)(_   _)| ___ | / ___)/ _ \\ | | / _  || ___ | /___)  |\n");
-	printf("\t|  | |   | ||___ |  | |_ | ____|| |   | |_| || |( (_| || ____||___ |  |\n");
-	printf("\t|  |_|   |_|(___/    \\__)|_____)|_|    \\___/ |_| \\____||_____)(___/   |\n");
-	printf("\t|                           Projeto 2013                              |\n");
-	printf("\t|       Trabalho de Laboratorio de Computação 1 - IM-UFRRJ 2013       |\n");
-	printf("\t|---------------------------------------------------------------------|\n");
-	printf("\t|                   Fellipe Bravo Ribeiro Pimentel                    |\n");
-	printf("\t|                      Paulo Roberto Xavier                           |\n");
-	printf("\t|                       Bianca Albuquerque                            |\n");
-	printf("\t-----------------------------------------------------------------------\n\n");
-
+int main(int argv, char **argc){
 	menu();
-	return 0;	
-}
-
-int Jogar(int argv, char **argc){
-
 	/* Inicialização da Janela */
 	SDL_Init(SDL_INIT_VIDEO);
-        if(SDL_Init(SDL_INIT_VIDEO) < 0){
-                exit(-1);
-        }
+        if(SDL_Init(SDL_INIT_VIDEO) < 0){ exit(-1); }
+
+	/* Inicialização da Fonte */
+	TTF_Init();
+	if(TTF_Init() == -1){ exit(-1); }
 
 	/* Configurações da Janela */
 	SDL_WM_SetCaption(NOME, NULL); /* Nome, definido em engine.h */
 	janela = SDL_SetVideoMode(ALTURA, LARGURA, 32, SDL_HWSURFACE);
  
         /* Checa se a janela existe, caso contrário o programa é fechado */
-	if(janela == NULL){
-		SDL_Quit();
-		exit(-1);
-        }
+	if(janela == NULL){ SDL_Quit(); exit(-1); }
+
+	/* Repetição de tecla, para movimentação */
+	SDL_EnableKeyRepeat(40, 40);
 
 	/* Espaço */
 	temp = SDL_LoadBMP("resources/galaxia.bmp");
@@ -77,57 +59,64 @@ int Jogar(int argv, char **argc){
 
 	naveTotal.x = 0; /* Inicio da sprite em X */
 	naveTotal.y = 0; /* Inicio da sprite em Y */
-	naveTotal.h = 96; /* Tamanho total da sprite */
-	naveTotal.w = 96; /* Tamanho total da sprite */
+	naveTotal.h = 150; /* Tamanho total da sprite */
+	naveTotal.w = 150; /* Tamanho total da sprite */
 
 	espacoTotal.x = 0; /* Local de Destino X da Nave */
 	espacoTotal.y = 0; /* Local de Destino Y da Nave */
 	espacoTotal.h = ALTURA; /* Tamanho total possível de deslocamento */
 	espacoTotal.w = LARGURA; /* Tamanho total possível de deslocamento */
 
-
+	
 	/*
 	Checagem se programa está aberto,
 	enquanto estiver aberto verifica se o jogador apertou ESC (Escape) para sair do jogo e/ou teclas de movimentação
 	 */
  	while(!aberto){
-		SDL_Event evento;
-		SDL_EnableKeyRepeat(100, 1);
+		if(vida >= 1){
+			aleatorio = 1 + (rand()%10);
+			SDL_Event evento;
+			while(SDL_PollEvent(&evento)){ DefGeral(evento); }
 
-		while(SDL_PollEvent(&evento)){
-			DefGeral(evento);
+				/* Desenha o Espaço por completo */
+				SDL_BlitSurface(espaco, NULL, janela, NULL);
+				/* Desenha a Nave */
+				SDL_BlitSurface(naveAngulo, &naveTotal, janela, &espacoTotal);
+
+				/* Escreve a Pontuação na tela */
+				sprintf(txtpontos, "Pontuacao: ");
+				texto(txtpontos, janela, 630, 5);
+
+				/* Escreve o Combustivel na tela */				
+				sprintf(txtcombustivel, "Combustivel: %d", combustivel);
+				texto(txtcombustivel, janela, 630, 25);
+
+				/* Escreve a Vida na tela */
+				sprintf(txtvidas, "Vidas: %d", vida);
+				texto(txtvidas, janela, 630, 45);
+        			/*
+				 Update da tela enquanto o programa está aberto
+				 Também para atualizar movimentação da nave.
+				*/
+
+		} else {
+
+			system("clear");
+			printf("Infelizmente as suas vidas acabaram! :/\n");
+			SDL_FreeSurface(nave); /* Evitar vazamento de memória */
+    			SDL_FreeSurface(espaco); /* Evitar vazamento de memória */
+			TTF_Quit();
+        		SDL_Quit();
+			return 0;
 		}
-		/* Desenha o Espaço por completo */
-		SDL_BlitSurface(espaco, NULL, janela, NULL);
-		/* Desenha a Nave */
-		SDL_BlitSurface(nave, &naveTotal, janela, &espacoTotal);
-        	/*
-		 Update da tela enquanto o programa está aberto
-		 Também para atualizar movimentação da nave.
-		*/
+
         	SDL_UpdateRect(janela, 0, 0, 0, 0);
  	}
 	SDL_FreeSurface(nave); /* Evitar vazamento de memória */
     	SDL_FreeSurface(espaco); /* Evitar vazamento de memória */
+	TTF_Quit();
         SDL_Quit();
-	Fim();
-
-	return 0;
-}
-
-int Fim() {
 	system("clear");
-	printf("\t-----------------------------------------------------------------------\n");
-	printf("\t|   _______                                   _      _                |\n");
-	printf("\t|  (_______)         _                       (_)    | |               |\n");
-	printf("\t|   _______   ___  _| |_  _____   ____  ___   _   __| | _____   ___   |\n");
-	printf("\t|  |  ___  | /___)(_   _)| ___ | / ___)/ _ \\ | | / _  || ___ | /___)  |\n");
-	printf("\t|  | |   | ||___ |  | |_ | ____|| |   | |_| || |( (_| || ____||___ |  |\n");
-	printf("\t|  |_|   |_|(___/    \\__)|_____)|_|    \\___/ |_| \\____||_____)(___/   |\n");
-	printf("\t|                           Projeto 2013                              |\n");
-	printf("\t|       Trabalho de Laboratorio de Computação 1 - IM-UFRRJ 2013       |\n");
-	printf("\t|---------------------------------------------------------------------|\n");
-	printf("\t|                          OBRIGADO POR JOGAR!                        |\n");
-	printf("\t|---------------------------------------------------------------------|\n");
-	return 0;
+	menu();
+	return 0;	
 }
