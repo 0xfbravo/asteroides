@@ -6,9 +6,9 @@ Projeto de Laboratório de Computação 1 - IM-UFRRJ 2013
 Linguagem do Projeto: C
 
 Participantes:
+   - Bianca Albuquerque
    - Fellipe Bravo Ribeiro Pimentel
    - Paulo Roberto Xavier
-   - Bianca Albuquerque
 
 -------------------------------------------------------------
 
