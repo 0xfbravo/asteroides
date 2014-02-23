@@ -28,11 +28,13 @@
 #include "engine.h"
 void Menu();
 void Jogar();
+void Pause();
 void Utilidades();
 void Habilidades();
 void InformacoesJogador();
 void CondicaoTeclado();
 int EventosMenu();
+int EventosPause();
 int EventosHabilidades();
 int EventosUtilidades();
 int EventosGerais();
@@ -41,20 +43,32 @@ void Sair();
 
 int main(int argc, char *argv[]){
 	// -----------------------------------------------------------------------------------------------------
+	//               Antes de Iniciar o Jogo, é pedido para que o jogar insira seu nick no terminal
+	// -----------------------------------------------------------------------------------------------------
+	LogoASCII();
+	printf("\t\t\t\t\t\t    Bem-vindo ao Projeto 2013 Asteroides.\n");
+	printf("\t\t\t------------------------------------------------------------------------------------------------\n\n");
+	printf("\t\t\t\tAntes de inciarmos o jogo,\n");
+	printf("\t\t\t\tpor favor digite o nick que desejas utilizar: \n\n");
+	printf("\t\t\t------------------------------------------------------------------------------------------------\n\n");
+	scanf("%s",nick);
+	printf("\n\n");
+	printf("\t\t\t------------------------------------------------------------------------------------------------\n\n");
+	printf("\t\t\t\tOlá %s, recomendamos que você veja todas as informacoes antes de jogar!\n", nick);
+	printf("\t\t\t\t\t\t\t    Tenha um bom jogo!\n");
+
+	SDL_Delay(1700);
+
+	// -----------------------------------------------------------------------------------------------------
 	//                                  Definições gerais para Inicialização
 	// -----------------------------------------------------------------------------------------------------
 	/* Inicialização da Janela */
 	SDL_Init(SDL_INIT_VIDEO);
 	/* Inicialização da Fonte */
 	TTF_Init();
+
 	/* Todas as Configurações Iniciais do SDL */
 	ConfSDL();
-	// -----------------------------------------------------------------------------------------------------
-	menuAberto = 1; // Define o Menu como Aberto, para que seja possível iniciarmos o jogo
-	imunidade = 1;
-	//LogoASCII();
-	//printf("\t\t\tPor favor digite um nick de até 21 caracteres: ");
-	//scanf("%s",nick);
 
 	while(menuAberto == 1){
 		Menu(); // Chamando a Função Menu
@@ -64,16 +78,22 @@ int main(int argc, char *argv[]){
 	}
 
 	while(jogando == 1){
-		dinheiro += 1;
-
 		Jogar(); //Chamando a Função Jogar
 
+		while(ranking == 1){
+			RankingVisual();
+		}
+
+		while(pause == 1){
+			Pause(); //Chamando o Modo de Espera
+		}
+
 		while(utilidades == 1){
-			Utilidades(); //Chamando a Função Jogar
+			Utilidades(); //Chamando a Loja de Utilidades
 		}
 
 		while(habilidades == 1){
-			Habilidades(); //Chamando a Função Jogar
+			Habilidades(); //Chamando a Janela de Habilidades
 		}
 	}
 
@@ -81,7 +101,6 @@ int main(int argc, char *argv[]){
         SDL_Quit();
 	system("clear");
 	return 0;
-	
 }
 
 
@@ -140,8 +159,7 @@ void Jogar(){
 	acelerarAngulo = rotozoomSurface(acelerar,angulo,1.0,0);
 	/* Desenha a Nave && Proteção */
  	if(imunidade == 1){ SDL_BlitSurface(protecaoAngulo, NULL, janela_Jogo, &PosicaoProtecao); }
-	if(velocidade > 0){ SDL_BlitSurface(acelerarAngulo, NULL, janela_Jogo, &PosicaoNave); }
-	else { SDL_BlitSurface(naveAngulo, NULL, janela_Jogo, &PosicaoNave); }
+	SDL_BlitSurface(naveAngulo, NULL, janela_Jogo, &PosicaoNave);
 }
 
 
@@ -276,7 +294,7 @@ void Habilidades(){
 	escreverTexto(3,imgCombustivel.x-30,imgCombustivel.y-25,notificacao,255,60,0,14);
 	SDL_BlitSurface(imgHab1, NULL, janela_Utilidades, &imgHabilidade1);
 
-	sprintf(notificacao,"Preço: $ %.2f",Preco_Combustivel);
+	sprintf(notificacao,"Preço: $ %.2f",Preco_Hab1);
 	escreverTexto(3,imgCombustivel.x-10,imgCombustivel.y+imgCombustivel.h,notificacao,255,60,0,14);
 
 	// ---------------------------------------------------------------------------	
@@ -285,11 +303,40 @@ void Habilidades(){
 	escreverTexto(3,imgVidas_Utilidade.x+5,imgVidas_Utilidade.y-30,notificacao,255,60,0,14);
 	SDL_BlitSurface(imgHab2, NULL, janela_Utilidades, &imgHabilidade2);
 
-	sprintf(notificacao,"Preço: $ %.2f",Preco_Vida);
+	sprintf(notificacao,"Preço: $ %.2f",Preco_Hab2);
 	escreverTexto(3,imgVidas_Utilidade.x-10,imgVidas_Utilidade.y+imgCombustivel.h,notificacao,255,60,0,14);
 
 }
 
+
+// -----------------------------------------------------------------------------------------------------
+// Função para Pausar o Jogo
+// -----------------------------------------------------------------------------------------------------
+void Pause(){
+
+	// -----------------------------------------------------------------------------------------------------
+	//                            Inicializações Fundamentais da Função Habilidades();
+	// -----------------------------------------------------------------------------------------------------
+	while(SDL_PollEvent(&evento)){ EventosPause(evento); }
+	   SDL_UpdateRect(janela_Pause, 0, 0, 0, 0);
+
+	// ---------------------------------------------------------------------------
+	/* Desenha o Espaço por completo */
+	SDL_BlitSurface(espaco2, NULL, janela_Pause, NULL);
+
+	// ---------------------------------------------------------------------------
+	/* Chama janela do Jogador com todas suas informações */
+	InformacoesJogador();
+
+	// ---------------------------------------------------------------------------	
+	/* Desenha Imagem SAIR (MENU) */
+	SDL_BlitSurface(botaoMenu4, NULL, janela_Pause, &imgbotaoMenu4);
+
+	// ---------------------------------------------------------------------------	
+	/* Mensagem da Janela de Habilidades */
+	sprintf(notificacao,"Você está com o Jogo em Modo de Espera.");
+	escreverTexto(5,110,200,notificacao,20,40,60,40);
+}
 
 
 // -----------------------------------------------------------------------------------------------------
@@ -395,6 +442,10 @@ int EventosGerais(SDL_Event evento){
 				case SDLK_UP:
 					if(velocidade < ACELERACAO_MAX){ velocidade += 0.3; }
 					combustivel -= velocidade;
+				break;
+
+				case SDLK_RETURN:
+					pause = 1;
 				break;
 
 				case SDLK_SPACE:
@@ -614,6 +665,39 @@ int EventosRanking(SDL_Event evento){
 			   evento.button.y <= (imgbotaoMenu4.h+imgbotaoMenu4.y)
 			){
 			   ranking = 0;
+			   if(jogando == 1){ jogando = 0; }
+			}
+			break;	
+			}
+		break;
+}
+return 0;
+}
+
+
+// -----------------------------------------------------------------------------------------------------
+// Função para verificar todos os eventos (mouse, teclado) enquanto está em MODO DE ESDPERA.
+// -----------------------------------------------------------------------------------------------------
+int EventosPause(SDL_Event evento){
+
+	switch (evento.type) {
+
+		// -----------------------------------
+		// -- Eventos relacionados ao Mouse --
+		// -----------------------------------
+		case SDL_MOUSEBUTTONDOWN:
+			switch (evento.button.button){
+				case SDL_BUTTON_LEFT:
+			// ----------------------------------------------------------
+			//             Sair do Jogo - BOTÃO SAIR (MENU)
+			// ----------------------------------------------------------
+			if(
+			   evento.button.x >= imgbotaoMenu4.x &&
+			   evento.button.x <= (imgbotaoMenu4.w+imgbotaoMenu4.x) &&
+			   evento.button.y >= imgbotaoMenu4.y &&
+			   evento.button.y <= (imgbotaoMenu4.h+imgbotaoMenu4.y)
+			){
+			   pause = 0;
 			}
 			break;	
 			}
@@ -631,6 +715,7 @@ void CondicaoTeclado(){
 	else if(menuAberto == 1 && (utilidades != 1 || habilidades != 1)){ Sair(); }
 	else if(habilidades == 1){ habilidades = 0; }
 	else if(utilidades == 1){ utilidades = 0; }
+	else if(pause == 1){ pause = 0; }
 }
 
 // -----------------------------------------------------------------------------------------------------

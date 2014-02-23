@@ -41,19 +41,23 @@
 #define NOME_MAX 21 //Define o máximo de caracteres possíveis para o Nick do jogador
 #define PONTUACAO_MAX 999999 //Define o máximo de pontos que um jogador conseguirá obter
 #define VIDA_MAX 3 //Máximo de vidas do jogador
-#define COMBUSTIVEL_MAX 20000 //Máximo de Combustível da Nave
+#define COMBUSTIVEL_MAX 10000 //Máximo de Combustível da Nave
 #define ACELERACAO_MAX 5 //Máxima velocidade atingida com a nave
 #define ASTEROIDES_MAX 16 //Máximo de asteroides no jogo.
+#define POSICAO_MAX 7 //Máximo de posições do Ranking
 // ----
 /* Demais valores */
 #define ACELERACAO 0.0 //Velocidade de movimentação da nave
 #define ATRITO 15 //Reduz a velocidade de movimentação da nave
 #define PI 3.14159265
 
+// -----------------------------
+
 /* Ints */
-int i;
-int menuAberto = 0;
+int i,j;
+int menuAberto = 1;
 int jogando = 0;
+int pause = 0;
 int utilidades = 0;
 int habilidades = 0;
 int ranking = 0;
@@ -64,13 +68,16 @@ int angulo = 0;
 int atirar;
 int anguloTiro;
 int velocidadeTiro = 12;
-int centroNaveX;
-int centroNaveY;
+int centroNaveX,centroNaveY;
 int pontuacao;
 int criouAsteroide = 0;
 int contarAsteroides;
-int imunidade;
-int tempoMaximo; // Tempo de Imunidade em SEGUNDOS (Tempo INICIAL da Nave)
+int imunidade = 1;
+int tempoMaximo = 30; // Tempo máximo para TIMER
+int xNotificacao, yNotificacao;
+
+// -----------------------------
+
 /* Floats */
 float dinheiro;
 float velocidade = ACELERACAO;
@@ -79,8 +86,14 @@ float Preco_Combustivel = 199.90;
 float Preco_Vida = 999.99;
 float Preco_Hab1 = 999.99;
 float Preco_Hab2 = 999.99;
+
+// -----------------------------
+
 /* Chars */
-char txtpontos[100],txtcombustivel[100],notificacao[400],txtvidas[100], nick[21];
+char txtpontos[100],txtcombustivel[100],notificacao[400],txtvidas[100],nick[10];
+
+// -----------------------------
+
 /* Funções */
 int colisao_nave(float x, float y, SDL_Rect B, SDL_Surface *C);
 int colisao_tiro(SDL_Rect A, SDL_Rect B);
@@ -89,32 +102,61 @@ int EventosRanking();
 void criarAsteroide(float xAsteroide, float yAsteroide, int tamanho, int posicao_vetor);
 void LogoASCII();
 void Condicoes();
+void verificarRanking();
 void ConfSDL();
 void Sair();
 
-/* Demais valores */
-Uint32 start;
-clock_t init_time; //Valor inicial 
-clock_t last_time; //Valor atual 
+// -----------------------------
 
+/* Demais valores */
+FILE * arquivoRanking;
+Uint32 start;
+
+// -----------------------------
+
+/* Struct's */
 typedef struct {
 	float x_Asteroide;
 	float y_Asteroide;
 	int tamanho;
-	int explodiu;
+	int explodiuTotal;
+	int asteroideCriado;
+	int anguloAsteroide;
 	SDL_Rect asteroide;
 	SDL_Surface *imgAsteroides;
 } ASTEROIDE;
 
 ASTEROIDE asteroideVetor[ASTEROIDES_MAX];
+int verificarAsteroides(ASTEROIDE asteroideVetor[]);
 
+// -----------------------------
+
+typedef struct {
+	int posicao;
+	char nick[10];
+	int pontuacao;
+} RANKING;
+
+RANKING jogador[POSICAO_MAX];
+
+// -----------------------------
+
+/* Valores do SDL */
 SDL_Surface
  *janela_Menu,
  *janela_Jogo,
+ *janela_Pause,
  *janela_Utilidades,
  *janela_Habilidades,
  *janela_Ranking,
  *logo,
+ *bannerRanking,
+ *bannerNotificacao,
+ *pergaminho,
+ *posicao1,
+ *posicao2,
+ *posicao3,
+ *posicao4,
  *botaoMenu1,
  *botaoMenu2,
  *botaoMenu3,
@@ -146,11 +188,18 @@ SDL_Surface
 SDL_Rect
  PosicaoNave,
  imagemLogo,
+ imagemRanking,
+ imagemPergaminho,
+ imgPosicao1,
+ imgPosicao2,
+ imgPosicao3,
+ imgPosicao4,
  imgbotaoMenu1,
  imgbotaoMenu2,
  imgbotaoMenu3,
  imgbotaoMenu4,
  imgCombustivel,
+ imgBannerNotificacao,
  imgVidas_Utilidade,
  imgHabilidade1,
  imgHabilidade2,
@@ -170,20 +219,6 @@ SDL_Rect
 TTF_Font *fonte;
 SDL_Event evento;
 
-/* Inicia a contagem */
-int InitClock(void) { 
-	init_time = clock(); 
-	last_time = init_time; 
-	return (int)init_time; 
-} 
-
-/* Atualiza o time */
-int CheckClock(void) { 
-	last_time = clock(); 
-	if(((int)last_time)-((int)init_time) >= tempoMaximo){ return 1; } //O relogio atingiu o tempo de espera; 
-	return 0; // o tempo de espera ainda não foi atingido; 
-} 
-
 // -----------------------------------------------------------------------------------------------------
 // Função que contém todas as informações Iniciais do SDL
 // -----------------------------------------------------------------------------------------------------
@@ -192,10 +227,7 @@ void ConfSDL(){
 	/* Configurações das Janelas */
 	SDL_WM_SetCaption(NOME, NULL); /* Nome, definido em engine.h */
 	janela_Menu = SDL_SetVideoMode(LARGURA, ALTURA, 32, SDL_HWSURFACE);
-	janela_Jogo = SDL_SetVideoMode(LARGURA, ALTURA, 32, SDL_HWSURFACE);
-	janela_Utilidades = SDL_SetVideoMode(LARGURA, ALTURA, 32, SDL_HWSURFACE);
-	janela_Habilidades = SDL_SetVideoMode(LARGURA, ALTURA, 32, SDL_HWSURFACE);
-	janela_Ranking = SDL_SetVideoMode(LARGURA, ALTURA, 32, SDL_HWSURFACE);
+	janela_Ranking = janela_Habilidades = janela_Utilidades = janela_Pause = janela_Jogo = janela_Menu;
 
 	/* Repetição de tecla, para movimentação */
 	SDL_EnableKeyRepeat(1, 10);
@@ -265,11 +297,13 @@ void ConfSDL(){
 	//   Nave, Espaço, Asteroides e etc
 	// -----------------------------------------------------------------------------------------------------
 	/* Nave */
-	nave = IMG_Load("resources/nave.png");
+	temp = SDL_LoadBMP("resources/nave.bmp");
+	nave = SDL_DisplayFormat(temp);
 	/* Localização da Imagem */
 	naveTotal.x = 0;
 	naveTotal.y = 0;
 	/* Cor nula na Nave */
+	SDL_SetColorKey(nave, SDL_SRCCOLORKEY|SDL_RLEACCEL,(Uint32)SDL_MapRGB(nave->format, 255,0,255));
 	x = (LARGURA/2)-naveTotal.w;
 	y = (ALTURA/2)-naveTotal.h;
 
@@ -366,6 +400,53 @@ void ConfSDL(){
 	imgHabilidade2.y = imgCombustivel.y;
 	imgHabilidade2.h = 90;
 	imgHabilidade2.w = 90;
+
+	// -----------------------------------------------------------------------------------------------------
+	/* Imagem Banner Ranking */
+	bannerRanking = IMG_Load("resources/titulo_ranking.png");
+	/* Localização da Imagem */
+	imagemRanking.x = 250;
+	imagemRanking.y = 105;
+
+	// -----------------------------------------------------------------------------------------------------
+	/* Imagem Banner Ranking */
+	pergaminho = IMG_Load("resources/pergaminho.png");
+	/* Localização da Imagem */
+	imagemPergaminho.x = 60;
+	imagemPergaminho.y = 0;
+
+
+	// -----------------------------------------------------------------------------------------------------
+	/* Imagem Posicao 1 */
+	posicao1 = IMG_Load("resources/posicao1.png");
+	/* Localização da Imagem */
+	imgPosicao1.x = 220;
+	imgPosicao1.y = 245;
+
+	// -----------------------------------------------------------------------------------------------------
+	/* Imagem Posicao 2 */
+	posicao2 = IMG_Load("resources/posicao2.png");
+	/* Localização da Imagem */
+	imgPosicao2.x = imgPosicao1.x;
+	imgPosicao2.y = imgPosicao1.y+47;
+
+	// -----------------------------------------------------------------------------------------------------
+	/* Imagem Posicao 3 */
+	posicao3 = IMG_Load("resources/posicao3.png");
+	/* Localização da Imagem */
+	imgPosicao3.x = imgPosicao1.x;
+	imgPosicao3.y = imgPosicao2.y+47;
+
+	// -----------------------------------------------------------------------------------------------------
+	/* Imagem Posicao4 */
+	posicao4 = IMG_Load("resources/posicao4.png");
+	/* Localização da Imagem */
+	imgPosicao4.x = imgPosicao1.x;
+	imgPosicao4.y = imgPosicao3.y+47;
+
+	bannerNotificacao = IMG_Load("resources/banner.png");
+	imgBannerNotificacao.x = 590;
+	imgBannerNotificacao.y = 0;
 }
 
 
@@ -416,6 +497,7 @@ void escreverTexto(int janela,int posicao_x, int posicao_y,char* texto, int R, i
 	else if(janela == 2) { SDL_BlitSurface(src, NULL, janela_Utilidades, &posicaoTexto); }
 	else if(janela == 3) { SDL_BlitSurface(src, NULL, janela_Habilidades, &posicaoTexto); }
 	else if(janela == 4) { SDL_BlitSurface(src, NULL, janela_Ranking, &posicaoTexto); }
+	else if(janela == 5) { SDL_BlitSurface(src, NULL, janela_Pause, &posicaoTexto); }
 
 	  SDL_FreeSurface(src);
 	  TTF_CloseFont(fonte);
@@ -426,6 +508,18 @@ void escreverTexto(int janela,int posicao_x, int posicao_y,char* texto, int R, i
 // Função para verificar todas as condições de Jogo.
 // -----------------------------------------------------------------------------------------------------
 void Condicoes(){
+
+	// ---------------------------------
+	//     Temporizador da Imunidade
+	// ---------------------------------
+  	//int segundos=0;
+	//if(imunidade == 1){
+		//segundos++;
+		//if(segundos >= tempoMaximo){
+		//	imunidade = 0;
+		//}
+	//}
+	naveAngulo = rotozoomSurface(nave,angulo,1.0,0);
 	// -----------------------------------
 	//        Inicialização do SDL
 	// -----------------------------------
@@ -440,22 +534,14 @@ void Condicoes(){
         )
 	{ SDL_Quit(); exit(-1); erro(2); }
 
-	if(imunidade == 1){
-		tempoMaximo = 1;
-		InitClock();
-		if(CheckClock() == 1){ imunidade = 0; SDL_Flip(janela_Jogo);}
-	}
-
 	// -----------------------------------
 	//   Informações Gerais - Asteroides
 	// -----------------------------------
-	// Criação dos Quatro Asteroides Iniciais
-	if(criouAsteroide == 0){ criarAsteroide(50, 50, 3, 0); }
-	else if(criouAsteroide == 1){  criarAsteroide(LARGURA-250, 50, 3, 1);  }
-	else if(criouAsteroide == 2){  criarAsteroide(50, ALTURA-250, 3, 2);  }
-	else if(criouAsteroide == 3){  criarAsteroide(LARGURA-250, ALTURA-250, 3, 4);  }
-
 	for(i = 0; i < ASTEROIDES_MAX; i++){
+		// Criação dos Quatro Asteroides Iniciais
+		if(asteroideVetor[i].asteroideCriado == 0 && i < 4){
+			criarAsteroide(rand()%900, rand()%800, 3, i);
+		}
 		// Ultrapassar tela
 		if(asteroideVetor[i].asteroide.y <= 0){ asteroideVetor[i].asteroide.y = ALTURA-250; }
 		else if(asteroideVetor[i].asteroide.x >= LARGURA){ asteroideVetor[i].asteroide.x = 0; }
@@ -463,18 +549,11 @@ void Condicoes(){
 		else if(asteroideVetor[i].asteroide.x <= 0){ asteroideVetor[i].asteroide.x = LARGURA-250; }
 
 		// Movimentação do Asteroide na Tela
-		asteroideVetor[i].asteroide.x += 1;
-		asteroideVetor[i].asteroide.y -= 1;
-		if(pontuacao > 20000){
-		asteroideVetor[i].asteroide.x += 3;
-		asteroideVetor[i].asteroide.y -= 3;
-		}
+		asteroideVetor[i].asteroide.x-=sin(asteroideVetor[i].anguloAsteroide * PI/180.0);
+		asteroideVetor[i].asteroide.y-=cos(asteroideVetor[i].anguloAsteroide * PI/180.0);
 
 		// Criação dos Asteroides Secundários
- 		if(asteroideVetor[i].tamanho < 0){
-			criarAsteroide(rand()%LARGURA, rand()%ALTURA, 3, i);
-		}
- 		else if(asteroideVetor[i].tamanho == 3){
+ 		if(asteroideVetor[i].tamanho == 3){
 		asteroideVetor[i].imgAsteroides = IMG_Load("resources/asteroides.png");
 		SDL_BlitSurface(asteroideVetor[i].imgAsteroides, NULL, janela_Jogo, &asteroideVetor[i].asteroide);
 		}
@@ -498,24 +577,54 @@ void Condicoes(){
 				SDL_SetColorKey(explosao, SDL_SRCCOLORKEY|SDL_RLEACCEL,(Uint32)SDL_MapRGB(explosao->format, 0,0,0));
 				SDL_BlitSurface(explosao, NULL, janela_Jogo, &asteroideVetor[i].asteroide);
 				SDL_Flip(janela_Jogo);
-				SDL_Delay(35);
-				asteroideVetor[i].tamanho -= 1;
+				SDL_Delay(10);
+				if(asteroideVetor[i].tamanho == 3){
+					asteroideVetor[i].tamanho -= 1;
+					j = verificarAsteroides(asteroideVetor);
+					criarAsteroide(rand()%LARGURA+1, rand()%ALTURA+1, 2, j);
+				}
+				else if(asteroideVetor[i].tamanho == 2){
+					asteroideVetor[i].tamanho -= 1;
+					j = verificarAsteroides(asteroideVetor);
+					criarAsteroide(rand()%LARGURA+1, rand()%ALTURA+1, 1, j);
+				}
+				else if(asteroideVetor[i].tamanho == 1){
+					asteroideVetor[i].tamanho -= 1;
+					asteroideVetor[i].explodiuTotal = 1;
+					asteroideVetor[i].asteroideCriado = 0;
+					j = verificarAsteroides(asteroideVetor);
+					criarAsteroide(rand()%LARGURA+1, rand()%ALTURA+1, 3, j);
+				}
 				atirar = 0;
 				pontuacao += (asteroideVetor[i].tamanho)*800;
+				dinheiro += (asteroideVetor[i].tamanho)*2.99;
 			}
 		}
 		// Checar colisão da Nave com algum dos Asteroides.
 		if(imunidade == 0){
-			if(colisao_nave(x, y, asteroideVetor[i].asteroide, naveAngulo) == 1){
+			if(colisao_nave(x, y, asteroideVetor[i].asteroide, naveAngulo) == 1 &&
+			   asteroideVetor[i].asteroideCriado == 1 &&
+			   asteroideVetor[i].explodiuTotal == 0
+			){
+				if(aviso < 3){
+				SDL_BlitSurface(bannerNotificacao, NULL, janela_Jogo, &imgBannerNotificacao);
+				SDL_Flip(janela_Jogo);
+				aviso++;
 				sprintf(notificacao, "Você perdeu uma vida pela Colisão!");
-				escreverTexto(1,270,260,notificacao,78,126,150,22);
+				escreverTexto(1,imgBannerNotificacao.x+20,30,notificacao,255,255,255,18);
+				}
+ 				else if(aviso == 3){
+				SDL_BlitSurface(bannerNotificacao, NULL, janela_Jogo, &imgBannerNotificacao);
+				sprintf(notificacao, "Você perdeu sua última vida!");
+				escreverTexto(1,imgBannerNotificacao.x+20,30,notificacao,255,255,255,18);
+				}
 				SDL_Flip(janela_Jogo);
 				vida -= 1;		
-				x = rand()%LARGURA;
-				y = rand()%ALTURA;
-				angulo = 90;
+				x = 450;
+				y = 300;
+				angulo = 0;
 				velocidade = 0;
-				SDL_Delay(4000);
+				SDL_Delay(1000);
 			}
 		}
 	}
@@ -523,8 +632,6 @@ void Condicoes(){
 	// -----------------------------------
 	//  Condições de Movimentação da Nave
 	// -----------------------------------
-	naveAngulo = rotozoomSurface(nave,angulo,1.0,0);
-
 	combustivel -= velocidade/100;
 
 	if(angulo >= 360){ angulo -= 360; }
@@ -568,29 +675,24 @@ void Condicoes(){
 	if(combustivel <= 0){ combustivel = 0; }
 	if(combustivel < 3000){
 		sprintf(notificacao, "O seu combustível está acabando!");
-		escreverTexto(1,25,540,notificacao,80,158,170,13);
+		escreverTexto(1,25,640,notificacao,80,158,170,13);
 		sprintf(notificacao, "Dica: Compre mais combustível com seu dinheiro, na Loja de Utilidades!");
-		escreverTexto(1,25,560,notificacao,80,158,170,13);
+		escreverTexto(1,25,660,notificacao,80,158,170,13);
 	}
 	if(combustivel <= 0 && vida > 0){
 		vida -= 1;
 		combustivel = COMBUSTIVEL_MAX;
-		if(aviso < 3){
-			aviso += 1;
-			sprintf(notificacao, "Você perdeu uma vida por falta de Combustível!");
-			escreverTexto(1,200,260,notificacao,78,126,150,18);
-			sprintf(notificacao, "O tanque será cheio novamente, [ %s ]!",nick);
-			escreverTexto(1,220,280,notificacao,78,126,150,18);
-			SDL_Flip(janela_Jogo);
-			x = 350;
-			y = 350;
-			SDL_Delay(4000);
-			SDL_Flip(janela_Jogo);
-		} else if(aviso == 3){
-			sprintf(notificacao, "Você perdeu sua última vida por falta de Combustível!");
-			escreverTexto(1,200,260,notificacao,78,126,150,18);
-			SDL_Flip(janela_Jogo);
-		}
+		SDL_BlitSurface(bannerNotificacao, NULL, janela_Jogo, &imgBannerNotificacao);
+		sprintf(notificacao, "Você perdeu uma vida por falta de Combustível!");
+		escreverTexto(1,imgBannerNotificacao.x+15,30,notificacao,255,255,255,14);
+		sprintf(notificacao, "O combustível será cheio novamente!");
+		escreverTexto(1,imgBannerNotificacao.x+40,50,notificacao,255,255,255,14);
+		SDL_Flip(janela_Jogo);
+		x = 450;
+		y = 300;
+		angulo = 0;
+		SDL_Delay(500);
+		SDL_Flip(janela_Jogo);
 	}
 
 	// -----------------------------------
@@ -599,16 +701,18 @@ void Condicoes(){
 	if(vida <= 0) {
 		system("clear");
 		SDL_Flip(janela_Jogo);
-		SDL_Delay(500);
+		SDL_Delay(100);
+		SDL_BlitSurface(bannerNotificacao, NULL, janela_Jogo, &imgBannerNotificacao);
 		sprintf(notificacao,"Infelizmente todas as suas vidas acabaram.");
-		escreverTexto(1,200,290,notificacao,148,126,150,20);
-		SDL_Delay(2000);
+		escreverTexto(1,imgBannerNotificacao.x+30,40,notificacao,255,255,255,14);
 		SDL_Flip(janela_Jogo);
+		SDL_Delay(500);
 		sprintf(notificacao,"[GAME OVER]");
-		escreverTexto(1,300,350,notificacao,20,40,60,42);
+		escreverTexto(1,230,340,notificacao,255,0,0,80);
 		SDL_Flip(janela_Jogo);
-		SDL_Delay(3000);
-		Sair();
+		SDL_Delay(1500);
+		verificarRanking();
+		ranking = 1;
 	}
 }
 
@@ -681,7 +785,38 @@ void criarAsteroide(float xAsteroide, float yAsteroide, int tamanho, int posicao
 	asteroideVetor[posicao_vetor].asteroide.x = asteroideVetor[posicao_vetor].x_Asteroide;
 	asteroideVetor[posicao_vetor].asteroide.y = asteroideVetor[posicao_vetor].y_Asteroide;
 
-	criouAsteroide += 1;
+	asteroideVetor[posicao_vetor].anguloAsteroide = rand()%360+90;
+
+	asteroideVetor[posicao_vetor].asteroideCriado = 1;
+}
+
+int verificarAsteroides(ASTEROIDE asteroideVetor[]){
+
+	for(i = 0; i < ASTEROIDES_MAX; i++){
+		if(asteroideVetor[i].asteroideCriado == 0){
+			return i;
+		}
+	}
+return 0;
+}
+
+void verificarRanking(){
+	arquivoRanking = fopen("ranking.bin","r");
+	while(!feof(arquivoRanking)){
+		fread(&jogador, sizeof(RANKING), 1, arquivoRanking);
+	}
+
+	for(i = 0; i < POSICAO_MAX; i++){
+		if(pontuacao > jogador[i].pontuacao){
+			jogador[i].pontuacao = pontuacao;
+			strncpy(jogador[i].nick, nick, sizeof(nick));
+			fclose(arquivoRanking);
+			arquivoRanking = fopen("ranking.bin","w");
+			fwrite(&jogador[i], sizeof(RANKING), 1, arquivoRanking);
+			fclose(arquivoRanking);
+			i = POSICAO_MAX;
+		}
+	}
 }
 
 int Comprar(float valor){
@@ -702,29 +837,34 @@ return 0;
 void LogoASCII(){
 
 	   system("clear");
-	   printf("------------------------------------------------------------------------------------------------\n");
-	   printf("|                                                                                              |\n");
-	   printf("|               _______                                   _      _                             |\n");        
-	   printf("|              (_______)         _                       (_)    | |                            |\n");             
-	   printf("|               _______   ___  _| |_  _____   ____  ___   _   __| | _____   ___                |\n");
-	   printf("|              |  ___  | /___)(_   _)| ___ | / ___)/ _ \\ | | / _  || ___ | /___)               |\n");
-	   printf("|              | |   | ||___ |  | |_ | ____|| |   | |_| || |( (_| || ____||___ |               |\n");
-	   printf("|              |_|   |_|(___/    \\__)|_____)|_|    \\___/ |_| \\____||_____)(___/                |\n");
-	   printf("|                                         Projeto 2013                                         |\n");
-	   printf("|                                                                                              |\n");
-	   printf("|                     Trabalho de Laboratório de Computação 1 - IM-UFRRJ 2013                  |\n");
-	   printf("|                          Participantes                                                       |\n");
-	   printf("|				- Bianca Albuquerque                                           |\n");
-	   printf("|				- Fellipe Bravo Ribeiro Pimentel                               |\n");
-	   printf("|				- Paulo Roberto Xavier                                         |\n");
-	   printf("|                                                                                              |\n");
-	   printf("------------------------------------------------------------------------------------------------\n");
+	   printf("\t\t\t------------------------------------------------------------------------------------------------\n");
+	   printf("\t\t\t|                                                                                              |\n");
+	   printf("\t\t\t|               _______                                   _      _                             |\n");        
+	   printf("\t\t\t|              (_______)         _                       (_)    | |                            |\n");             
+	   printf("\t\t\t|               _______   ___  _| |_  _____   ____  ___   _   __| | _____   ___                |\n");
+	   printf("\t\t\t|              |  ___  | /___)(_   _)| ___ | / ___)/ _ \\ | | / _  || ___ | /___)               |\n");
+	   printf("\t\t\t|              | |   | ||___ |  | |_ | ____|| |   | |_| || |( (_| || ____||___ |               |\n");
+	   printf("\t\t\t|              |_|   |_|(___/    \\__)|_____)|_|    \\___/ |_| \\____||_____)(___/                |\n");
+	   printf("\t\t\t|                                         Projeto 2013                                         |\n");
+	   printf("\t\t\t|                                                                                              |\n");
+	   printf("\t\t\t|                     Trabalho de Laboratório de Computação 1 - IM-UFRRJ 2013                  |\n");
+	   printf("\t\t\t|                          Participantes                                                       |\n");
+	   printf("\t\t\t|				- Bianca Albuquerque                                           |\n");
+	   printf("\t\t\t|				- Fellipe Bravo Ribeiro Pimentel                               |\n");
+	   printf("\t\t\t|				- Paulo Roberto Xavier                                         |\n");
+	   printf("\t\t\t|                                                                                              |\n");
+	   printf("\t\t\t------------------------------------------------------------------------------------------------\n");
 
 }
 
 
 void RankingVisual(){
-
+	if(ranking == 1){
+		imgbotaoMenu4.x = imgbotaoMenu1.x;
+		imgbotaoMenu4.y = imgbotaoMenu3.y+180;
+		imgbotaoMenu4.h = 50;
+		imgbotaoMenu4.w = 381;
+	}
 	// -----------------------------------------------------------------------------------------------------
 	//                            Inicializações Fundamentais da Função Habilidades();
 	// -----------------------------------------------------------------------------------------------------
@@ -735,22 +875,20 @@ void RankingVisual(){
 	/* Desenha o Espaço por completo */
 	SDL_BlitSurface(espaco, NULL, janela_Ranking, NULL);
 
-	/* Desenha LOGO */
-	SDL_BlitSurface(logo, NULL, janela_Menu, &imagemLogo);
+	/* Desenha o PERGAMINHO (Background) */
+	SDL_BlitSurface(pergaminho, NULL, janela_Ranking, &imagemPergaminho);
+	/* Desenha o Banner do Ranking */
+	SDL_BlitSurface(bannerRanking, NULL, janela_Ranking, &imagemRanking);
+
+	/* Desenha imagens das Posicoes */
+	SDL_BlitSurface(posicao1, NULL, janela_Ranking, &imgPosicao1);
+	SDL_BlitSurface(posicao2, NULL, janela_Ranking, &imgPosicao2);
+	SDL_BlitSurface(posicao3, NULL, janela_Ranking, &imgPosicao3);
+	SDL_BlitSurface(posicao4, NULL, janela_Ranking, &imgPosicao4);
 
 	/* Desenha Imagem SAIR (MENU) */
-	SDL_BlitSurface(botaoMenu4, NULL, janela_Menu, &imgbotaoMenu4);
+	SDL_BlitSurface(botaoMenu4, NULL, janela_Ranking, &imgbotaoMenu4);
 
-	   sprintf(notificacao,"-----------------------------------------------------------------------------------");
-	   escreverTexto(4,150,200,notificacao,0,0,0,18);
-	   sprintf(notificacao,"|                           Ranking de Jogadores                      |");
-	   escreverTexto(4,150,220,notificacao,0,0,0,18);
-	   sprintf(notificacao,"-----------------------------------------------------------------------------------");
-	   escreverTexto(4,150,240,notificacao,0,0,0,18);
-	   sprintf(notificacao,"|     COLOCAÇÃO  |    NICKNAME    |     PONTUAÇÃO     |");
-	   escreverTexto(4,150,260,notificacao,0,0,0,18);
-	   sprintf(notificacao,"-----------------------------------------------------------------------------------");
-	   escreverTexto(4,150,280,notificacao,0,0,0,18);
 	   /*
 	        Futuramente utilização de:
 	   printf("\t\t   | Nº Lugar - %s   PONTOS: %u   |\n",jogadorN,pontosN);
@@ -763,25 +901,33 @@ void RankingVisual(){
 	   			NICK = NICK+ESPAÇOS
 	   		}
 	   */
-	   sprintf(notificacao,"| 1º Lugar -   NOMEDEATE21CARACTERES   PONTOS: %u |",PONTUACAO_MAX);
-	   escreverTexto(4,150,300,notificacao,0,0,0,16);
-	   sprintf(notificacao,"-----------------------------------------------------------------------------------");
-	   escreverTexto(4,150,320,notificacao,0,0,0,18);
-	   sprintf(notificacao,"| 2º Lugar -   NOMEDEATE21CARACTERES   PONTOS: %u |",PONTUACAO_MAX);
-	   escreverTexto(4,150,340,notificacao,0,0,0,16);
-	   sprintf(notificacao,"-----------------------------------------------------------------------------------");
-	   escreverTexto(4,150,360,notificacao,0,0,0,18);
-	   sprintf(notificacao,"| 3º Lugar -   NOMEDEATE21CARACTERES   PONTOS: %u |",PONTUACAO_MAX);
-	   escreverTexto(4,150,380,notificacao,0,0,0,16);
-	   sprintf(notificacao,"-----------------------------------------------------------------------------------");
-	   escreverTexto(4,150,400,notificacao,0,0,0,18);
-	   sprintf(notificacao,"| 4º Lugar -   NOMEDEATE21CARACTERES   PONTOS: %u |",PONTUACAO_MAX);
-	   escreverTexto(4,150,420,notificacao,0,0,0,16);
-	   sprintf(notificacao,"-----------------------------------------------------------------------------------");
-	   escreverTexto(4,150,440,notificacao,0,0,0,18);
-	   sprintf(notificacao,"| 5º Lugar -   NOMEDEATE21CARACTERES   PONTOS: %u |",PONTUACAO_MAX);
-	   escreverTexto(4,150,460,notificacao,0,0,0,16);
-	   sprintf(notificacao,"-----------------------------------------------------------------------------------");
-	   escreverTexto(4,150,480,notificacao,0,0,0,18);
+	arquivoRanking = fopen("ranking.bin","r");
+	while(!feof(arquivoRanking)){
+		fread(&jogador, sizeof(RANKING), 1, arquivoRanking);
+	for(i = 0; i < POSICAO_MAX; i++){
+	   if(i == 0){
+	   sprintf(notificacao,"%dº Lugar     [%s]   PONTOS: %d",i+1,jogador[i].nick,jogador[i].pontuacao);
+	   escreverTexto(4,275,260,notificacao,102,51,0,16);}
+	   else if(i == 1){
+	   sprintf(notificacao,"%dº Lugar     [%s]   PONTOS: %d",i+1,jogador[i].nick,jogador[i].pontuacao);
+	   escreverTexto(4,275,305,notificacao,102,51,0,16);}
+	   else if(i == 2){
+	   sprintf(notificacao,"%dº Lugar     [%s]   PONTOS: %d",i+1,jogador[i].nick,jogador[i].pontuacao);
+	   escreverTexto(4,275,350,notificacao,102,51,0,16);}
+	   else if(i == 3){
+	   sprintf(notificacao,"%dº Lugar     [%s]   PONTOS: %d",i+1,jogador[i].nick,jogador[i].pontuacao);
+	   escreverTexto(4,275,395,notificacao,102,51,0,16);}
+	   else if(i == 4){
+	   sprintf(notificacao,"%dº Lugar     [%s]   PONTOS: %d",i+1,jogador[i].nick,jogador[i].pontuacao);
+	   escreverTexto(4,275,435,notificacao,102,51,0,16);}
+	   else if(i == 5){
+	   sprintf(notificacao,"%dº Lugar     [%s]   PONTOS: %d",i+1,jogador[i].nick,jogador[i].pontuacao);
+	   escreverTexto(4,275,475,notificacao,102,51,0,16);}
+	   else if(i == 6){
+	   sprintf(notificacao,"%dº Lugar     [%s]   PONTOS: %d",i+1,jogador[i].nick,jogador[i].pontuacao);
+	   escreverTexto(4,275,510,notificacao,102,51,0,16);}
+	}
+	}
+	fclose(arquivoRanking);
 
 }
