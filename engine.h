@@ -72,9 +72,10 @@ int centroNaveX,centroNaveY;
 int pontuacao;
 int criouAsteroide = 0;
 int contarAsteroides;
-int imunidade = 1;
+int imunidade = 0;
 int tempoMaximo = 30; // Tempo máximo para TIMER
 int xNotificacao, yNotificacao;
+int randomico;
 
 // -----------------------------
 
@@ -83,7 +84,7 @@ float dinheiro;
 float velocidade = ACELERACAO;
 float x,y;/* X e Y iniciais da Nave */
 float Preco_Combustivel = 199.90;
-float Preco_Vida = 999.99;
+float Preco_Vida = 255.90;
 float Preco_Hab1 = 999.99;
 float Preco_Hab2 = 999.99;
 
@@ -218,6 +219,7 @@ SDL_Rect
 
 TTF_Font *fonte;
 SDL_Event evento;
+
 
 // -----------------------------------------------------------------------------------------------------
 // Função que contém todas as informações Iniciais do SDL
@@ -504,6 +506,7 @@ void escreverTexto(int janela,int posicao_x, int posicao_y,char* texto, int R, i
 
 }
 
+
 // -----------------------------------------------------------------------------------------------------
 // Função para verificar todas as condições de Jogo.
 // -----------------------------------------------------------------------------------------------------
@@ -538,9 +541,14 @@ void Condicoes(){
 	//   Informações Gerais - Asteroides
 	// -----------------------------------
 	for(i = 0; i < ASTEROIDES_MAX; i++){
+		randomico = rand()%1024;
+		if(randomico >= asteroideVetor[i].asteroide.x+asteroideVetor[i].asteroide.w && 
+		   randomico <= asteroideVetor[i].asteroide.y+asteroideVetor[i].asteroide.h){
+			randomico = rand()%1024;
+		}
 		// Criação dos Quatro Asteroides Iniciais
 		if(asteroideVetor[i].asteroideCriado == 0 && i < 4){
-			criarAsteroide(rand()%900, rand()%800, 3, i);
+			criarAsteroide(randomico, randomico, 3, i);
 		}
 		// Ultrapassar tela
 		if(asteroideVetor[i].asteroide.y <= 0){ asteroideVetor[i].asteroide.y = ALTURA-250; }
@@ -580,20 +588,24 @@ void Condicoes(){
 				SDL_Delay(10);
 				if(asteroideVetor[i].tamanho == 3){
 					asteroideVetor[i].tamanho -= 1;
+					asteroideVetor[i].asteroide.x = randomico;
+					asteroideVetor[i].asteroide.y = randomico;
 					j = verificarAsteroides(asteroideVetor);
-					criarAsteroide(rand()%LARGURA+1, rand()%ALTURA+1, 2, j);
+					criarAsteroide(randomico, randomico, 2, j);
 				}
 				else if(asteroideVetor[i].tamanho == 2){
 					asteroideVetor[i].tamanho -= 1;
+					asteroideVetor[i].asteroide.x = randomico;
+					asteroideVetor[i].asteroide.y = randomico;
 					j = verificarAsteroides(asteroideVetor);
-					criarAsteroide(rand()%LARGURA+1, rand()%ALTURA+1, 1, j);
+					criarAsteroide(randomico, randomico, 1, j);
 				}
 				else if(asteroideVetor[i].tamanho == 1){
 					asteroideVetor[i].tamanho -= 1;
+					asteroideVetor[i].asteroide.x = randomico;
+					asteroideVetor[i].asteroide.y = randomico;
 					asteroideVetor[i].explodiuTotal = 1;
 					asteroideVetor[i].asteroideCriado = 0;
-					j = verificarAsteroides(asteroideVetor);
-					criarAsteroide(rand()%LARGURA+1, rand()%ALTURA+1, 3, j);
 				}
 				atirar = 0;
 				pontuacao += (asteroideVetor[i].tamanho)*800;
@@ -606,6 +618,26 @@ void Condicoes(){
 			   asteroideVetor[i].asteroideCriado == 1 &&
 			   asteroideVetor[i].explodiuTotal == 0
 			){
+				explosao = IMG_Load("resources/explosion.png");
+				SDL_SetColorKey(explosao, SDL_SRCCOLORKEY|SDL_RLEACCEL,(Uint32)SDL_MapRGB(explosao->format, 0,0,0));
+				SDL_BlitSurface(explosao, NULL, janela_Jogo, &asteroideVetor[i].asteroide);
+				SDL_Flip(janela_Jogo);
+				SDL_Delay(10);
+				if(asteroideVetor[i].tamanho == 3){
+					asteroideVetor[i].tamanho -= 1;
+					j = verificarAsteroides(asteroideVetor);
+					criarAsteroide(randomico, randomico, 2, j);
+				}
+				else if(asteroideVetor[i].tamanho == 2){
+					asteroideVetor[i].tamanho -= 1;
+					j = verificarAsteroides(asteroideVetor);
+					criarAsteroide(randomico, randomico, 1, j);
+				}
+				else if(asteroideVetor[i].tamanho == 1){
+					asteroideVetor[i].tamanho -= 1;
+					asteroideVetor[i].explodiuTotal = 1;
+					asteroideVetor[i].asteroideCriado = 0;
+				}
 				if(aviso < 3){
 				SDL_BlitSurface(bannerNotificacao, NULL, janela_Jogo, &imgBannerNotificacao);
 				SDL_Flip(janela_Jogo);
@@ -624,6 +656,7 @@ void Condicoes(){
 				y = 300;
 				angulo = 0;
 				velocidade = 0;
+				imunidade = 1;
 				SDL_Delay(1000);
 			}
 		}
