@@ -13,7 +13,6 @@
 |                          Participantes                                                       |
 |				- Bianca Albuquerque                                           |
 |				- Fellipe Bravo Ribeiro Pimentel                               |
-|				- Paulo Roberto Xavier                                         |
 |                                                                                              |
 ------------------------------------------------------------------------------------------------
 */
@@ -55,12 +54,15 @@
 
 /* Ints */
 int i,j;
-int menuAberto = 1;
+int digitaNick = 1;
+int digitou = 0;
+int menuAberto = 0;
 int jogando = 0;
 int pause = 0;
 int utilidades = 0;
 int habilidades = 0;
 int ranking = 0;
+int menuInfo = 0;
 int aviso = 1;
 int vida = VIDA_MAX;
 int combustivel = COMBUSTIVEL_MAX;
@@ -74,8 +76,8 @@ int criouAsteroide = 0;
 int contarAsteroides;
 int imunidade = 0;
 int tempoMaximo = 30; // Tempo máximo para TIMER
-int xNotificacao, yNotificacao;
 int randomico;
+int contaLetra;
 
 // -----------------------------
 
@@ -85,13 +87,13 @@ float velocidade = ACELERACAO;
 float x,y;/* X e Y iniciais da Nave */
 float Preco_Combustivel = 199.90;
 float Preco_Vida = 255.90;
-float Preco_Hab1 = 999.99;
-float Preco_Hab2 = 999.99;
+float Preco_Hab1 = 509.99;
+float Preco_Hab2 = 499.99;
 
 // -----------------------------
 
 /* Chars */
-char txtpontos[100],txtcombustivel[100],notificacao[400],txtvidas[100],nick[10];
+char txtpontos[100],txtcombustivel[100],notificacao[400],txtvidas[100],nick[10],letra;
 
 // -----------------------------
 
@@ -101,6 +103,7 @@ int colisao_tiro(SDL_Rect A, SDL_Rect B);
 int Comprar(float valor);
 int EventosRanking();
 void criarAsteroide(float xAsteroide, float yAsteroide, int tamanho, int posicao_vetor);
+void InformacoesJogador();
 void LogoASCII();
 void Condicoes();
 void verificarRanking();
@@ -146,10 +149,12 @@ RANKING jogador[POSICAO_MAX];
 SDL_Surface
  *janela_Menu,
  *janela_Jogo,
+ *janela_Nick,
  *janela_Pause,
  *janela_Utilidades,
  *janela_Habilidades,
  *janela_Ranking,
+ *janela_Informacoes,
  *logo,
  *bannerRanking,
  *bannerNotificacao,
@@ -184,7 +189,10 @@ SDL_Surface
  *imgIconeVida,
  *imgHab1,
  *imgHab2,
- *alpha;
+ *alpha,
+ *imgInformacao1,
+ *imgInformacao2,
+ *imgInformacao3;
 
 SDL_Rect
  PosicaoNave,
@@ -215,7 +223,10 @@ SDL_Rect
  imagemUtilidades,
  imagemHabilidades,
  asteroide,
- bgNotificacao;
+ bgNotificacao,
+ informacao1,
+ informacao2,
+ informacao3;
 
 TTF_Font *fonte;
 SDL_Event evento;
@@ -229,10 +240,7 @@ void ConfSDL(){
 	/* Configurações das Janelas */
 	SDL_WM_SetCaption(NOME, NULL); /* Nome, definido em engine.h */
 	janela_Menu = SDL_SetVideoMode(LARGURA, ALTURA, 32, SDL_HWSURFACE);
-	janela_Ranking = janela_Habilidades = janela_Utilidades = janela_Pause = janela_Jogo = janela_Menu;
-
-	/* Repetição de tecla, para movimentação */
-	SDL_EnableKeyRepeat(1, 10);
+	janela_Nick = janela_Informacoes = janela_Ranking = janela_Habilidades = janela_Utilidades = janela_Pause = janela_Jogo = janela_Menu;
 
 	/* Responsável por carregar o Background que é utilizado nas janelas Jogo & Menu */
 	espaco = IMG_Load("resources/bg.jpg");
@@ -449,6 +457,27 @@ void ConfSDL(){
 	bannerNotificacao = IMG_Load("resources/banner.png");
 	imgBannerNotificacao.x = 590;
 	imgBannerNotificacao.y = 0;
+
+	// -----------------------------------------------------------------------------------------------------
+	/* Imagem de Informação 1 */
+	imgInformacao1 = IMG_Load("resources/Movimentacao.png");
+	/* Localização da Imagem */
+	informacao1.x = 100;
+	informacao1.y = 350;
+
+	// -----------------------------------------------------------------------------------------------------
+	/* Imagem de Informação 2 */
+	imgInformacao2 = IMG_Load("resources/atirar.png");
+	/* Localização da Imagem */
+	informacao2.x = informacao1.x + 230;
+	informacao2.y = informacao1.y;
+
+	// -----------------------------------------------------------------------------------------------------
+	/* Imagem de Informação 3 */
+	imgInformacao3 = IMG_Load("resources/pause.png");
+	/* Localização da Imagem */
+	informacao3.x = informacao2.x + 380;
+	informacao3.y = informacao1.y - 40;
 }
 
 
@@ -487,6 +516,9 @@ void escreverTexto(int janela,int posicao_x, int posicao_y,char* texto, int R, i
 		   2 - Janela da Loja de Utilidades
                    3 - Janela da Loja de habilidades
 		   4 - Janela do Ranking
+		   5 - Janela de Modo de Espera
+		   6 - Janela de Informações
+		   7 - Janela de Nick
 	*/
 	  TTF_ByteSwappedUNICODE(1);
 	  fonte = TTF_OpenFont("resources/Waree.ttf", tamanho_texto);
@@ -500,6 +532,8 @@ void escreverTexto(int janela,int posicao_x, int posicao_y,char* texto, int R, i
 	else if(janela == 3) { SDL_BlitSurface(src, NULL, janela_Habilidades, &posicaoTexto); }
 	else if(janela == 4) { SDL_BlitSurface(src, NULL, janela_Ranking, &posicaoTexto); }
 	else if(janela == 5) { SDL_BlitSurface(src, NULL, janela_Pause, &posicaoTexto); }
+	else if(janela == 6) { SDL_BlitSurface(src, NULL, janela_Informacoes, &posicaoTexto); }
+	else if(janela == 7) { SDL_BlitSurface(src, NULL, janela_Nick, &posicaoTexto); }
 
 	  SDL_FreeSurface(src);
 	  TTF_CloseFont(fonte);
@@ -541,11 +575,9 @@ void Condicoes(){
 	//   Informações Gerais - Asteroides
 	// -----------------------------------
 	for(i = 0; i < ASTEROIDES_MAX; i++){
-		randomico = rand()%1024;
-		if(randomico >= asteroideVetor[i].asteroide.x+asteroideVetor[i].asteroide.w && 
-		   randomico <= asteroideVetor[i].asteroide.y+asteroideVetor[i].asteroide.h){
-			randomico = rand()%1024;
-		}
+	if(asteroideVetor[i].anguloAsteroide >= 360){ asteroideVetor[i].anguloAsteroide -= 360; }
+	if(asteroideVetor[i].anguloAsteroide < 0){ asteroideVetor[i].anguloAsteroide += 360; }
+		randomico = rand()%1024 + 1;
 		// Criação dos Quatro Asteroides Iniciais
 		if(asteroideVetor[i].asteroideCriado == 0 && i < 4){
 			criarAsteroide(randomico, randomico, 3, i);
@@ -585,7 +617,7 @@ void Condicoes(){
 				SDL_SetColorKey(explosao, SDL_SRCCOLORKEY|SDL_RLEACCEL,(Uint32)SDL_MapRGB(explosao->format, 0,0,0));
 				SDL_BlitSurface(explosao, NULL, janela_Jogo, &asteroideVetor[i].asteroide);
 				SDL_Flip(janela_Jogo);
-				SDL_Delay(10);
+				SDL_Delay(7);
 				if(asteroideVetor[i].tamanho == 3){
 					asteroideVetor[i].tamanho -= 1;
 					asteroideVetor[i].asteroide.x = randomico;
@@ -622,7 +654,7 @@ void Condicoes(){
 				SDL_SetColorKey(explosao, SDL_SRCCOLORKEY|SDL_RLEACCEL,(Uint32)SDL_MapRGB(explosao->format, 0,0,0));
 				SDL_BlitSurface(explosao, NULL, janela_Jogo, &asteroideVetor[i].asteroide);
 				SDL_Flip(janela_Jogo);
-				SDL_Delay(10);
+				SDL_Delay(7);
 				if(asteroideVetor[i].tamanho == 3){
 					asteroideVetor[i].tamanho -= 1;
 					j = verificarAsteroides(asteroideVetor);
@@ -747,6 +779,17 @@ void Condicoes(){
 		verificarRanking();
 		ranking = 1;
 	}
+
+	// ---------------------------------------------------------------------------
+	/* Chama janela do Jogador com todas suas informações */
+	InformacoesJogador();
+	// ---------------------------------------------------------------------------
+	/* Desenha Botão da Loja de Utilidades */
+	SDL_BlitSurface(imgUtilidades, NULL, janela_Jogo, &imagemUtilidades);
+
+	// ---------------------------------------------------------------------------	
+	/* Desenha Botão da Loja de Utilidades */
+	SDL_BlitSurface(imgHabilidades, NULL, janela_Jogo, &imagemHabilidades);
 }
 
 
@@ -808,7 +851,6 @@ int colisao_tiro(SDL_Rect A, SDL_Rect B){
 } 
 
 void criarAsteroide(float xAsteroide, float yAsteroide, int tamanho, int posicao_vetor){
-
 	asteroideVetor[posicao_vetor].x_Asteroide = xAsteroide;
 	asteroideVetor[posicao_vetor].y_Asteroide = yAsteroide;
 	asteroideVetor[posicao_vetor].tamanho = tamanho;
@@ -818,7 +860,7 @@ void criarAsteroide(float xAsteroide, float yAsteroide, int tamanho, int posicao
 	asteroideVetor[posicao_vetor].asteroide.x = asteroideVetor[posicao_vetor].x_Asteroide;
 	asteroideVetor[posicao_vetor].asteroide.y = asteroideVetor[posicao_vetor].y_Asteroide;
 
-	asteroideVetor[posicao_vetor].anguloAsteroide = rand()%360+90;
+	asteroideVetor[posicao_vetor].anguloAsteroide += rand()%360;
 
 	asteroideVetor[posicao_vetor].asteroideCriado = 1;
 }
@@ -884,7 +926,6 @@ void LogoASCII(){
 	   printf("\t\t\t|                          Participantes                                                       |\n");
 	   printf("\t\t\t|				- Bianca Albuquerque                                           |\n");
 	   printf("\t\t\t|				- Fellipe Bravo Ribeiro Pimentel                               |\n");
-	   printf("\t\t\t|				- Paulo Roberto Xavier                                         |\n");
 	   printf("\t\t\t|                                                                                              |\n");
 	   printf("\t\t\t------------------------------------------------------------------------------------------------\n");
 

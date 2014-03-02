@@ -1,14 +1,13 @@
-Asteroides -- IM-UFRRJ 2013
+Asteroides -- IM-UFRRJ 2013.2
 ==========
 
-Projeto de Laboratório de Computação 1 - IM-UFRRJ 2013
+Projeto de Laboratório de Computação 1 - IM-UFRRJ 2013.2
 
 Linguagem do Projeto: C
 
 Participantes:
    - Bianca Albuquerque
    - Fellipe Bravo Ribeiro Pimentel
-   - Paulo Roberto Xavier
 
 -------------------------------------------------------------
 
